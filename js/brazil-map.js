@@ -1,4 +1,3 @@
-// Carrega o mapa do Brasil com estados e municípios
 async function loadBrazilMap() {
     const svg = d3.select("#brazil-map");
     
