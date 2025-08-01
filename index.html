@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Brasil - Explore o País</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1>RPG Brasil</h1>
+            <div class="player-info">
+                <span id="player-name">Jogador</span>
+                <span id="player-level">Nível: 1</span>
+                <span id="player-location">Localização: -</span>
+            </div>
+        </header>
+        
+        <main>
+            <div class="map-container">
+                <svg id="brazil-map" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+                    <!-- Estados serão inseridos via JavaScript -->
+                </svg>
+                
+                <div class="map-overlay">
+                    <div class="location-info" id="location-info">
+                        <h2 id="current-location">Selecione um estado</h2>
+                        <div id="location-description">Clique em um estado para ver detalhes e opções de viagem</div>
+                        <div class="travel-options" id="travel-options"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <button id="new-game">Novo Jogo</button>
+            <button id="save-game">Salvar Jogo</button>
+            <button id="load-game">Carregar Jogo</button>
+        </footer>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>
