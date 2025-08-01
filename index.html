@@ -3,43 +3,466 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RPG Brasil - Explore o País</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>RPG Brasil - Mapa Interativo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            overflow: hidden;
+        }
+        
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        #header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        #game-title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        #player-info {
+            display: flex;
+            gap: 20px;
+        }
+        
+        #player-info div {
+            background-color: #34495e;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        
+        #map-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background-color: #7eb5d6;
+        }
+        
+        #brazil-map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .state {
+            fill: #27ae60;
+            stroke: #2c3e50;
+            stroke-width: 1;
+            transition: fill 0.3s;
+            cursor: pointer;
+        }
+        
+        .state:hover {
+            fill: #2ecc71;
+        }
+        
+        .state.selected {
+            fill: #e74c3c;
+        }
+        
+        .route {
+            stroke: #e67e22;
+            stroke-width: 2;
+            fill: none;
+        }
+        
+        .railway {
+            stroke: #9b59b6;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 5,5;
+        }
+        
+        .city {
+            fill: #f1c40f;
+            stroke: #f39c12;
+            stroke-width: 1;
+            cursor: pointer;
+        }
+        
+        .city:hover {
+            fill: #f39c12;
+        }
+        
+        .city.selected {
+            fill: #e74c3c;
+        }
+        
+        #tooltip {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 100;
+            display: none;
+        }
+        
+        #controls {
+            background-color: #34495e;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+        }
+        
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            background-color: rgba(52, 73, 94, 0.7);
+            color: white;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        #mini-map {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 150px;
+            height: 150px;
+            background-color: rgba(255, 255, 255, 0.7);
+            border: 2px solid #2c3e50;
+            z-index: 10;
+        }
+    </style>
 </head>
 <body>
-    <div class="game-container">
-        <header>
-            <h1>RPG Brasil</h1>
-            <div class="player-info">
-                <span id="player-name">Jogador</span>
-                <span id="player-level">Nível: 1</span>
-                <span id="player-location">Localização: -</span>
+    <div id="game-container">
+        <div id="header">
+            <div id="game-title">RPG Brasil</div>
+            <div id="player-info">
+                <div id="player-name">Jogador: Herói</div>
+                <div id="player-level">Nível: 1</div>
+                <div id="player-location">Local: Brasil</div>
             </div>
-        </header>
+        </div>
         
-        <main>
-            <div class="map-container">
-                <svg id="brazil-map" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
-                    <!-- Estados serão inseridos via JavaScript -->
-                </svg>
+        <div id="map-container">
+            <svg id="brazil-map" viewBox="0 0 1000 1000">
+                <!-- Estados do Brasil (simplificado) -->
+                <path id="AC" class="state" d="M200,300 L220,310 L230,290 L210,280 Z" data-name="Acre"/>
+                <path id="AL" class="state" d="M600,500 L620,510 L630,490 L610,480 Z" data-name="Alagoas"/>
+                <path id="AP" class="state" d="M400,100 L420,110 L430,90 L410,80 Z" data-name="Amapá"/>
+                <path id="AM" class="state" d="M300,200 L320,210 L330,190 L310,180 Z" data-name="Amazonas"/>
+                <path id="BA" class="state" d="M500,400 L520,410 L530,390 L510,380 Z" data-name="Bahia"/>
+                <path id="CE" class="state" d="M550,350 L570,360 L580,340 L560,330 Z" data-name="Ceará"/>
+                <path id="DF" class="state" d="M450,450 L460,460 L470,440 L460,430 Z" data-name="Distrito Federal"/>
+                <path id="ES" class="state" d="M550,500 L570,510 L580,490 L560,480 Z" data-name="Espírito Santo"/>
+                <path id="GO" class="state" d="M450,450 L470,460 L480,440 L460,430 Z" data-name="Goiás"/>
+                <path id="MA" class="state" d="M450,300 L470,310 L480,290 L460,280 Z" data-name="Maranhão"/>
+                <path id="MT" class="state" d="M350,400 L370,410 L380,390 L360,380 Z" data-name="Mato Grosso"/>
+                <path id="MS" class="state" d="M400,450 L420,460 L430,440 L410,430 Z" data-name="Mato Grosso do Sul"/>
+                <path id="MG" class="state" d="M500,450 L520,460 L530,440 L510,430 Z" data-name="Minas Gerais"/>
+                <path id="PA" class="state" d="M350,250 L370,260 L380,240 L360,230 Z" data-name="Pará"/>
+                <path id="PB" class="state" d="M600,400 L620,410 L630,390 L610,380 Z" data-name="Paraíba"/>
+                <path id="PR" class="state" d="M450,550 L470,560 L480,540 L460,530 Z" data-name="Paraná"/>
+                <path id="PE" class="state" d="M580,450 L600,460 L610,440 L590,430 Z" data-name="Pernambuco"/>
+                <path id="PI" class="state" d="M500,350 L520,360 L530,340 L510,330 Z" data-name="Piauí"/>
+                <path id="RJ" class="state" d="M550,520 L570,530 L580,510 L560,500 Z" data-name="Rio de Janeiro"/>
+                <path id="RN" class="state" d="M620,380 L640,390 L650,370 L630,360 Z" data-name="Rio Grande do Norte"/>
+                <path id="RS" class="state" d="M400,600 L420,610 L430,590 L410,580 Z" data-name="Rio Grande do Sul"/>
+                <path id="RO" class="state" d="M250,350 L270,360 L280,340 L260,330 Z" data-name="Rondônia"/>
+                <path id="RR" class="state" d="M300,150 L320,160 L330,140 L310,130 Z" data-name="Roraima"/>
+                <path id="SC" class="state" d="M450,580 L470,590 L480,570 L460,560 Z" data-name="Santa Catarina"/>
+                <path id="SP" class="state" d="M500,500 L520,510 L530,490 L510,480 Z" data-name="São Paulo"/>
+                <path id="SE" class="state" d="M580,480 L600,490 L610,470 L590,460 Z" data-name="Sergipe"/>
+                <path id="TO" class="state" d="M450,350 L470,360 L480,340 L460,330 Z" data-name="Tocantins"/>
                 
-                <div class="map-overlay">
-                    <div class="location-info" id="location-info">
-                        <h2 id="current-location">Selecione um estado</h2>
-                        <div id="location-description">Clique em um estado para ver detalhes e opções de viagem</div>
-                        <div class="travel-options" id="travel-options"></div>
-                    </div>
-                </div>
+                <!-- Rodovias (simplificado) -->
+                <path class="route" d="M550,500 L560,510 L570,490" data-name="BR-101"/>
+                <path class="route" d="M500,450 L510,460 L520,440" data-name="BR-040"/>
+                <path class="route" d="M450,550 L460,560 L470,540" data-name="BR-116"/>
+                
+                <!-- Ferrovias (simplificado) -->
+                <path class="railway" d="M500,500 L510,490 L520,510" data-name="Ferrovia Norte-Sul"/>
+                <path class="railway" d="M450,450 L460,440 L470,460" data-name="Ferrovia Centro-Atlântica"/>
+                
+                <!-- Cidades (pontos principais) -->
+                <circle class="city" cx="550" cy="520" r="5" data-name="Rio de Janeiro"/>
+                <circle class="city" cx="500" cy="500" r="5" data-name="São Paulo"/>
+                <circle class="city" cx="450" cy="450" r="5" data-name="Brasília"/>
+                <circle class="city" cx="600" cy="500" r="5" data-name="Maceió"/>
+                <circle class="city" cx="400" cy="600" r="5" data-name="Porto Alegre"/>
+                <circle class="city" cx="300" cy="200" r="5" data-name="Manaus"/>
+                <circle class="city" cx="500" cy="400" r="5" data-name="Salvador"/>
+                <circle class="city" cx="550" cy="350" r="5" data-name="Fortaleza"/>
+                <circle class="city" cx="450" cy="550" r="5" data-name="Curitiba"/>
+            </svg>
+            
+            <div id="tooltip"></div>
+            
+            <div class="zoom-controls">
+                <div class="zoom-btn" id="zoom-in">+</div>
+                <div class="zoom-btn" id="zoom-out">-</div>
+                <div class="zoom-btn" id="reset-zoom">↻</div>
             </div>
-        </main>
+            
+            <div id="mini-map"></div>
+        </div>
         
-        <footer>
-            <button id="new-game">Novo Jogo</button>
-            <button id="save-game">Salvar Jogo</button>
-            <button id="load-game">Carregar Jogo</button>
-        </footer>
+        <div id="controls">
+            <button id="travel-btn">Viajar</button>
+            <button id="explore-btn">Explorar</button>
+            <button id="quests-btn">Missões</button>
+            <button id="inventory-btn">Inventário</button>
+            <button id="save-btn">Salvar Jogo</button>
+        </div>
     </div>
-    
-    <script src="game.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Variáveis do jogo
+            const gameState = {
+                player: {
+                    name: "Herói",
+                    level: 1,
+                    location: "Brasil",
+                    currentState: null,
+                    currentCity: null,
+                    inventory: [],
+                    quests: []
+                },
+                map: {
+                    scale: 1,
+                    x: 0,
+                    y: 0,
+                    isDragging: false,
+                    startX: 0,
+                    startY: 0
+                }
+            };
+            
+            // Elementos do DOM
+            const brazilMap = document.getElementById('brazil-map');
+            const mapContainer = document.getElementById('map-container');
+            const tooltip = document.getElementById('tooltip');
+            const zoomInBtn = document.getElementById('zoom-in');
+            const zoomOutBtn = document.getElementById('zoom-out');
+            const resetZoomBtn = document.getElementById('reset-zoom');
+            const playerNameEl = document.getElementById('player-name');
+            const playerLevelEl = document.getElementById('player-level');
+            const playerLocationEl = document.getElementById('player-location');
+            
+            // Selecionar estado
+            document.querySelectorAll('.state').forEach(state => {
+                state.addEventListener('click', function() {
+                    document.querySelectorAll('.state').forEach(s => s.classList.remove('selected'));
+                    this.classList.add('selected');
+                    
+                    const stateName = this.getAttribute('data-name');
+                    gameState.player.currentState = stateName;
+                    gameState.player.location = stateName;
+                    updatePlayerInfo();
+                    
+                    // Centralizar no estado
+                    const bbox = this.getBBox();
+                    centerMap(bbox.x + bbox.width/2, bbox.y + bbox.height/2);
+                });
+                
+                state.addEventListener('mouseenter', function(e) {
+                    const name = this.getAttribute('data-name');
+                    showTooltip(e, name);
+                });
+                
+                state.addEventListener('mouseleave', hideTooltip);
+            });
+            
+            // Selecionar cidade
+            document.querySelectorAll('.city').forEach(city => {
+                city.addEventListener('click', function() {
+                    document.querySelectorAll('.city').forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    
+                    const cityName = this.getAttribute('data-name');
+                    gameState.player.currentCity = cityName;
+                    gameState.player.location = cityName;
+                    updatePlayerInfo();
+                });
+                
+                city.addEventListener('mouseenter', function(e) {
+                    const name = this.getAttribute('data-name');
+                    showTooltip(e, name);
+                });
+                
+                city.addEventListener('mouseleave', hideTooltip);
+            });
+            
+            // Rotas e ferrovias
+            document.querySelectorAll('.route, .railway').forEach(route => {
+                route.addEventListener('mouseenter', function(e) {
+                    const name = this.getAttribute('data-name');
+                    showTooltip(e, name);
+                });
+                
+                route.addEventListener('mouseleave', hideTooltip);
+            });
+            
+            // Controles de zoom
+            zoomInBtn.addEventListener('click', () => zoomMap(1.2));
+            zoomOutBtn.addEventListener('click', () => zoomMap(0.8));
+            resetZoomBtn.addEventListener('click', resetZoom);
+            
+            // Controles de arrastar o mapa
+            mapContainer.addEventListener('mousedown', startDrag);
+            mapContainer.addEventListener('mousemove', dragMap);
+            mapContainer.addEventListener('mouseup', endDrag);
+            mapContainer.addEventListener('mouseleave', endDrag);
+            
+            // Botões de controle
+            document.getElementById('travel-btn').addEventListener('click', travel);
+            document.getElementById('explore-btn').addEventListener('click', explore);
+            document.getElementById('quests-btn').addEventListener('click', showQuests);
+            document.getElementById('inventory-btn').addEventListener('click', showInventory);
+            document.getElementById('save-btn').addEventListener('click', saveGame);
+            
+            // Funções do jogo
+            function updatePlayerInfo() {
+                playerNameEl.textContent = `Jogador: ${gameState.player.name}`;
+                playerLevelEl.textContent = `Nível: ${gameState.player.level}`;
+                playerLocationEl.textContent = `Local: ${gameState.player.location}`;
+            }
+            
+            function showTooltip(e, text) {
+                tooltip.textContent = text;
+                tooltip.style.display = 'block';
+                tooltip.style.left = `${e.clientX + 10}px`;
+                tooltip.style.top = `${e.clientY + 10}px`;
+            }
+            
+            function hideTooltip() {
+                tooltip.style.display = 'none';
+            }
+            
+            function zoomMap(scaleFactor) {
+                gameState.map.scale *= scaleFactor;
+                applyTransform();
+            }
+            
+            function resetZoom() {
+                gameState.map.scale = 1;
+                gameState.map.x = 0;
+                gameState.map.y = 0;
+                applyTransform();
+            }
+            
+            function centerMap(x, y) {
+                const containerWidth = mapContainer.clientWidth;
+                const containerHeight = mapContainer.clientHeight;
+                
+                gameState.map.x = containerWidth/2 - x * gameState.map.scale;
+                gameState.map.y = containerHeight/2 - y * gameState.map.scale;
+                
+                applyTransform();
+            }
+            
+            function applyTransform() {
+                brazilMap.style.transform = `translate(${gameState.map.x}px, ${gameState.map.y}px) scale(${gameState.map.scale})`;
+            }
+            
+            function startDrag(e) {
+                gameState.map.isDragging = true;
+                gameState.map.startX = e.clientX - gameState.map.x;
+                gameState.map.startY = e.clientY - gameState.map.y;
+                mapContainer.style.cursor = 'grabbing';
+            }
+            
+            function dragMap(e) {
+                if (!gameState.map.isDragging) return;
+                
+                gameState.map.x = e.clientX - gameState.map.startX;
+                gameState.map.y = e.clientY - gameState.map.startY;
+                
+                applyTransform();
+            }
+            
+            function endDrag() {
+                gameState.map.isDragging = false;
+                mapContainer.style.cursor = 'grab';
+            }
+            
+            function travel() {
+                if (!gameState.player.currentCity) {
+                    alert('Selecione uma cidade para viajar!');
+                    return;
+                }
+                
+                alert(`Viajando para ${gameState.player.currentCity}...`);
+                // Lógica de viagem aqui
+            }
+            
+            function explore() {
+                const location = gameState.player.currentCity || gameState.player.currentState || 'Brasil';
+                alert(`Explorando ${location}...`);
+                // Lógica de exploração aqui
+            }
+            
+            function showQuests() {
+                alert('Mostrando missões disponíveis...');
+                // Lógica de missões aqui
+            }
+            
+            function showInventory() {
+                alert('Mostrando inventário...');
+                // Lógica de inventário aqui
+            }
+            
+            function saveGame() {
+                alert('Jogo salvo com sucesso!');
+                // Lógica de salvamento aqui
+            }
+            
+            // Inicialização
+            updatePlayerInfo();
+        });
+    </script>
 </body>
 </html>
